@@ -1,0 +1,15 @@
+/snap/clion/34/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/yangyuhuan/文档/raft_yyh
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Looking for pthread_create
+-- Looking for pthread_create - not found
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Found Protobuf: /usr/local/lib/libprotobuf.a;-lpthread (found version "3.5.1") 
+-- Found GRPC: /usr/local/lib/libgrpc++.so;/usr/local/lib/libgrpc.so;/usr/local/lib/libgpr.so; plugin - /usr/local/bin/grpc_cpp_plugin
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/yangyuhuan/文档/raft_yyh/cmake-build-debug

@@ -1,0 +1,112 @@
+
+//状态 State
+class all_information
+{
+	currentTerm 任期号
+	votedFor 候选人/领导人ID
+	log[] 日志条目集
+
+	commitIndex 已知最大的已经被提交的日志条目Index
+	lastApplied 最后被应用的日志条目Index  //初始化为0，持续递增
+}
+
+class information_in_leader
+{
+	nextIndex[] 对于每一个服务器，需要发送给他的下一个日志条目的索引值
+		//初始化为领导人的最后索引值+1
+	matchIndex[] 对于每一个服务器，已经复制给他的日志的最高索引值
+}
+
+
+
+
+//附加日志rpc AppendEntries_RPC
+//领导人负责调用，用于复制日志和heartbeat
+class Append_info
+{
+	term 领导人任期号
+	leaderID 领导人ID
+	prevLogIndex 新的日志条目紧随之前的索引值
+	prevLogTerm	prevLogIndex 条目的任期号
+	entry
+	//entries[]	准备存储的日志条目 //表示心跳时为空；一次性发送多个是为了提高效率
+	leaderCommit	领导人已经提交的日志的索引值
+}
+class returnAppend//返回值
+{
+	term	当前的任期号，用于领导人去更新自己
+	success	跟随者包含了匹配上 prevLogIndex 和 prevLogTerm 的日志时为真
+}
+/*
+接收者实现：
+    如果 term < currentTerm 就返回 false （5.1 节）
+    如果日志在 prevLogIndex 位置处的日志条目的任期号和 prevLogTerm 不匹配，则返回 false （5.3 节）
+    如果已经已经存在的日志条目和新的产生冲突（相同偏移量但是任期号不同），删除这一条和之后所有的 （5.3 节）
+    附加任何在已有的日志中不存在的条目
+    如果 leaderCommit > commitIndex，令 commitIndex 等于 leaderCommit 和 新日志条目索引值中较小的一个
+*/
+
+
+
+
+//请求投票rpc VoteRequestRCP
+class VoteInfo
+{
+	term	候选人的任期号
+	candidateID	请求选票的候选人的 Id
+	lastLogIndex	候选人的最后日志条目的索引值
+	lastLogTerm	候选人最后日志条目的任期号
+}
+class returnVote//返回值
+{
+	term	当前任期号，以便于候选人去更新自己的任期号
+	voteGranted	候选人赢得了此张选票时为真
+}
+/*
+接收者实现：
+    如果term < currentTerm返回 false （5.2 节）
+    如果 votedFor 为空或者就是 candidateId，并且候选人的日志也自己一样新，那么就投票给他（5.2 节，5.4 节）
+
+*/
+
+
+
+
+所有服务器需遵守的规则：
+
+所有服务器：
+
+    如果commitIndex > lastApplied，那么就 lastApplied 加一，并把log[lastApplied]应用到状态机中（5.3 节）
+    如果接收到的 RPC 请求中，任期号T > currentTerm，那么就令 currentTerm 等于 T，并切换状态为跟随者（5.1 节）
+
+跟随者（5.2 节）：
+
+    响应来自候选人和领导者的请求
+    如果在超过选举超时时间的情况之前都没有收到领导人的心跳，或者是候选人请求投票的，就自己变成候选人
+
+候选人（5.2 节）：
+
+    在转变成候选人后就立即开始选举过程
+        自增当前的任期号（currentTerm）
+        给自己投票
+        重置选举超时计时器
+        发送请求投票的 RPC 给其他所有服务器
+    如果接收到大多数服务器的选票，那么就变成领导人
+    如果接收到来自新的领导人的附加日志 RPC，转变成跟随者
+    如果选举过程超时，再次发起一轮选举
+
+领导人：
+
+    一旦成为领导人：发送空的附加日志 RPC（心跳）给其他所有的服务器；在一定的空余时间之后不停的重复发送，以阻止跟随者超时（5.2 节）
+    如果接收到来自客户端的请求：附加条目到本地日志中，在条目被应用到状态机后响应客户端（5.3 节）
+    如果对于一个跟随者，最后日志条目的索引值大于等于 nextIndex，那么：发送从 nextIndex 开始的所有日志条目：
+        如果成功：更新相应跟随者的 nextIndex 和 matchIndex
+        如果因为日志不一致而失败，减少 nextIndex 重试
+    如果存在一个满足N > commitIndex的 N，并且大多数的matchIndex[i] ≥ N成立，并且log[N].term == currentTerm成立，那么令 commitIndex 等于这个 N （5.3 和 5.4 节）
+
+/*
+需要保证线程安全的东西：
+所有
+*/
+
+
